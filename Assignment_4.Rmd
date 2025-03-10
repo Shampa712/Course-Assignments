@@ -1,0 +1,155 @@
+---
+title: "Assignment_4"
+author: "Shampa"
+date: "2025-03-07"
+output: html_document
+---
+
+### Reading Assignment
+
+When we include interaction terms in logit regression models used to predict probabilities, interpreting the results can be challenging. In linear models, interaction terms show how the effect of one variable change depending on another variable, and this is straightforward. However, in logit models, the relationship is not linear, making the interaction effect less clear. The coefficients obtained from the model do not directly indicate how much the probability changes when both variables interact. This can lead to misunderstandings or incorrect conclusions.
+
+For example, Ai and Norton (2003) point out that the interaction effect in logit models is not constant, it depends on the values of other variables in the model. This means it is not as simple as looking at the coefficient and concluding the effect. King, Tomz, and Wittenberg (2000) suggest that to make sense of these results, we should focus on presenting predicted probabilities or marginal effects, which are easier to understand. Instead of merely reporting coefficients, we can show how the probability of an outcome changes under different scenarios.
+
+This is where simulation-based approaches, as suggested by Zelner, B.A. (2009), become useful. This approach allows us to create hypothetical scenarios and observe how predicted probabilities change when we adjust the variables. For instance, we can simulate what happens to the probability of an outcome when one variable increase while another remains constant, or when both change together. This provides a clearer picture of the interaction effect and helps avoid misinterpretations of the model’s results. Simulation makes the complex relationships in logit models more tangible and easier to explain.
+
+In short, interaction terms in logit models can be difficult to interpret because their effects are not straightforward. However, by using simulation and focusing on predicted probabilities, we can better understand and communicate the true implications of our model.
+
+### Data Analysis Assignment
+
+```{r}
+
+# Clear environment
+rm(list = ls())
+gc()
+
+
+# Load libraries
+library(tidyverse)
+library(dplyr)
+library(readr)
+library(haven)
+library(stringr)
+library(ggplot2)
+library(broom)
+library(car)
+
+```
+```{r}
+
+# Set directory
+air_quality <- read.csv("C:/Users/Shamp/Downloads/Air_Quality 2024NYC.csv")
+
+# Verify the Column Name
+colnames(air_quality)
+
+# Check the data structure 
+str(air_quality)
+head(air_quality)
+
+```
+```{r}
+
+# Create a binary variable (e.g., Data.Value > 25)
+air_quality <- air_quality %>%
+  mutate(Binary_Var = ifelse(Data.Value > 25, 1, 0))
+
+# Create a subset of the data with only the necessary variables and remove rows with missing values
+subset_data <- air_quality %>%
+  select(Binary_Var, Data.Value, Indicator.ID, Geo.Type.Name, Geo.Join.ID) %>%
+  na.omit()
+
+```
+```{r}
+
+# Fit a simple logit model
+model1 <- glm(Binary_Var ~ Data.Value, data = subset_data, family = binomial)
+
+# Fit a more complex logit model
+model2 <- glm(Binary_Var ~ Data.Value + Indicator.ID + Geo.Type.Name, data = subset_data, family = binomial)
+
+# Fit an even more complex logit model
+model3 <- glm(Binary_Var ~ Data.Value + Indicator.ID + Geo.Type.Name + Geo.Join.ID, data = subset_data, family = binomial)
+
+```
+```{r}
+
+# Compare models using AIC and BIC
+AIC(model1, model2, model3)
+BIC(model1, model2, model3)
+
+# Conduct likelihood ratio test
+anova(model1, model2, model3, test = "LRT")
+
+# Summarize the best model
+summary(model3)
+
+```
+## Interpretation
+
+# Model Summaries
+
+1.	Model 1: Binary_Var ~ Data.Value
+2.	Model 2: Binary_Var ~ Data.Value + Indicator.ID + Geo.Type.Name
+3.	Model 3: Binary_Var ~ Data.Value + Indicator.ID + Geo.Type.Name + Geo.Join.ID
+
+# Likelihood Ratio Test
+
+The likelihood ratio test compares the nested models to see if the more complex models significantly improve the fit compared to the simpler ones.
+Coefficients and P-values
+
+•	(Intercept): The intercept is not statistically significant (p = 0.674).
+•	Data.Value: The coefficient for Data.Value is positive but not statistically significant (p = 0.665).
+•	Indicator.ID: The coefficient for Indicator.ID is very close to zero and not statistically significant (p = 1.000).
+•	Geo.Type.NameCD: The coefficient for Geo.Type.NameCD is not statistically significant (p = 0.999).
+•	Geo.Type.NameCitywide: The coefficient for Geo.Type.NameCitywide is not statistically significant (p = 0.999).
+•	Geo.Type.NameUHF34: The coefficient for Geo.Type.NameUHF34 is not statistically significant (p = 0.999).
+•	Geo.Type.NameUHF42: The coefficient for Geo.Type.NameUHF42 is not statistically significant (p = 0.999).
+•	Geo.Join.ID: The coefficient for Geo.Join.ID is very close to zero and not statistically significant (p = 1.000).
+
+Model Fit
+
+The results indicate that none of the variables included in Model 3 are statistically significant predictors of the binary outcome. The p-values for all coefficients are very high, indicating that there is no evidence to suggest that any of these variables have a noteworthy effect on the binary outcome.
+
+Null deviance: 21627 on 18015 degrees of freedom.
+
+This measures how well the response variable is predicted by a model that includes only the intercept but no predictors. A high null deviance indicates that the intercept-only model does not fit the data well.
+Residual Deviance
+
+Residual deviance: 0.0010034 on 18008 degrees of freedom.
+
+This measures how well the response variable is predicted by the model with predictors. A lower residual deviance indicates a better fit. In this case, the residual deviance is extremely low, suggesting that the model fits the data almost perfectly. However, this might indicate overfitting.
+Degrees of Freedom
+
+Degrees of freedom: The difference between the number of observations and the number of parameters estimated. For the null deviance, it is 18015 (number of observations) minus 1 (intercept). For the residual deviance, it is 18015 minus the number of parameters in the model.
+
+Overall, the results suggest that the model does not provide meaningful perceptions into the relationship between the predictors and the binary outcome.
+
+# AIC (Akaike Information Criterion)
+
+•	Model 1: AIC = 4.001003
+•	Model 2: AIC = 14.001003
+•	Model 3: AIC = 16.001003
+
+Explanation
+
+•	Model 1 has the lowest AIC value (4.001003), indicating that it is the best model among the three in terms of balancing model fit and complexity. Lower AIC values are preferred because they suggest a better trade-off between goodness of fit and model complexity.
+•	Model 2 has a higher AIC value (14.001003) compared to Model 1, suggesting that adding Indicator.ID and Geo.Type.Name does not improve the model enough to justify the increased complexity.
+•	Model 3 has the highest AIC value (16.001003), indicating that adding Geo.Join.ID further increases the model complexity without providing any significant improvement in fit.
+Based on the AIC values, Model 1 is the preferred model because it has the lowest AIC, representing the best balance between fit and complexity. This aligns with the earlier interpretation that adding more variables does not significantly improve the model.
+
+# BIC (Bayesian Information Criterion)
+
+•	Model 1: BIC = 19.59903
+•	Model 2: BIC = 68.59411
+•	Model 3: BIC = 78.39313
+
+Explanation
+
+•	Model 1 has the lowest BIC value (19.59903), representing that it is the best model among the three in terms of balancing model fit and complexity. Lower BIC values are preferred because they suggest a better trade-off between goodness of fit and model complexity.
+•	Model 2 has a higher BIC value (68.59411) compared to Model 1, suggesting that adding Indicator.ID and Geo.Type.Name does not improve the model enough to justify the increased complexity.
+•	Model 3 has the highest BIC value (78.39313), indicating that adding Geo.Join.ID further increases the model complexity without providing a significant improvement in fit.
+
+Both AIC and BIC suggest that Model 1 is the best model. It is the simplest model and provides the best balance between fit and complexity. The additional variables in Models 2 and 3 do not remarkably improve the model's performance.
+
+
